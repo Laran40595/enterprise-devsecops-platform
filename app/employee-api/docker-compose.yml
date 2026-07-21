@@ -1,0 +1,35 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: employee-postgres
+    environment:
+      POSTGRES_DB: employeedb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - devsecops-network
+
+
+  employee-api:
+    image: employee-api:latest
+    container_name: employee-api
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - devsecops-network
+
+
+networks:
+  devsecops-network:
+    driver: bridge
+
+
+volumes:
+  postgres-data:
