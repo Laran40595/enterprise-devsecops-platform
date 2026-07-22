@@ -3,7 +3,6 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = "employee-api"
         IMAGE_NAME = "employee-api:latest"
     }
 
@@ -44,15 +43,15 @@ pipeline {
             steps {
                 dir('app/employee-api') {
                     sh '''
-                    echo "Stopping old containers..."
+                    echo "Stopping previous deployment..."
 
                     docker compose down || true
 
-                    echo "Starting application..."
+                    echo "Starting new deployment..."
 
                     docker compose up -d
 
-                    echo "Containers started"
+                    echo "Deployment containers started"
                     '''
                 }
             }
@@ -62,24 +61,22 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh '''
-                echo "Waiting for Employee API..."
+                echo "Waiting for Employee API startup..."
 
-                for i in {1..10}
-                do
-                    if curl -f http://localhost:8080/api/employees
-                    then
-                        echo ""
-                        echo "Employee API is running successfully"
-                        exit 0
-                    fi
+                sleep 40
 
-                    echo "API not ready yet. Attempt $i/10"
-                    sleep 10
-                done
+                echo "Checking Employee API..."
 
-                echo "Employee API health check failed"
-                docker ps
-                exit 1
+                curl -i http://localhost:8080/api/employees
+
+                if [ $? -eq 0 ]
+                then
+                    echo "Employee API is running successfully"
+                else
+                    echo "Employee API health check failed"
+                    docker logs employee-api
+                    exit 1
+                fi
                 '''
             }
         }
@@ -91,7 +88,7 @@ pipeline {
                 echo "Running containers:"
                 docker ps
 
-                echo "Testing API:"
+                echo "Testing API response:"
                 curl http://localhost:8080/api/employees
                 '''
             }
